@@ -1,0 +1,181 @@
+﻿@using Microsoft.AspNetCore.Components.Web
+@using SM_Comics.Models
+@using SM_Comics.Services
+@inject ComicService CService
+
+<div class="card-columns">
+    @foreach (var comic in CService.GetComics())
+    {
+        System.Console.WriteLine(comic.Id);
+        if (comic.Series_Id == 1)
+        {
+            <div class="card">
+                @*<div class="card-img img-fluid" style="background-image: url('@comic.Image');" @onclick="(e => SelectComic(comic.Id))"
+                     data-toggle="modal" data-target="#comicModal">
+                    </div>*@
+                <img class="img-fluid" src="@comic.Image" @onclick="(e => SelectSeries(comic.Series))"
+                     data-toggle="modal" data-target="#seriesModal" />
+                <div class="card-body">
+                    <h5 class="card-title">@comic.Series</h5>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted">
+                        <button @onclick="(e => SelectSeries(comic.Series))"
+                                data-toggle="modal" data-target="#seriesModal" class="btn btn-primary">
+                            Content
+                        </button>
+                        <button @onclick="(e => SelectSeries(comic.Series))"
+                                data-toggle="modal" data-target="#detailsModal" class="btn btn-primary" >
+                            Details
+                        </button>
+                    </small>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<div class="modal fade" id="seriesModal" tabindex="-1" role="dialog" aria-labelledby="seriesTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                @foreach (var comic in selectedSeries)
+                {
+                <p>
+                    <button @onclick="(e => SelectComic(comic.Id))"
+                            data-toggle="modal" data-target="#comicModal" class="btn btn-primary">
+                        @comic.Series<br /> #@comic.Series_Id
+                    </button>
+                </p>                    
+                }
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="comicModal" tabindex="-1" role="dialog" aria-labelledby="comicTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            @if (selectedComic != null)
+            {
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productTitle">@selectedComic.Title</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="card">
+                        @*<div class="card-img" style="background-image: url('@selectedComic.Pages[i]');"></div>*@
+                        <img class="img-fluid" src="@selectedComic.Pages[i]" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button @onclick="PreviousComic">
+                        Previous Comic
+                    </button>
+                    <button @onclick="NextComic">
+                        Next Comic
+                    </button>
+                    <button @onclick="PageDown">
+                        Previous Page
+                    </button>
+                    <button @onclick="PageUp">
+                        Next Page
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="detailsModal" tabindex="-1" role="dialog" aria-labelledby="seriesDetail" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>@selectedComicSeries</p>
+            </div>
+            <div class="modal-footer">
+                <p>@selectedComicDescription</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    Comic selectedComic;
+    string selectedComicId;
+    int i;
+
+    List<Comic> selectedSeries = new List<Comic>();
+    string selectedComicSeries;
+    string selectedComicDescription;
+
+    void SelectComic(string comicId)
+    {
+        selectedComicId = comicId;
+        selectedComic = CService.GetComics().First(x => x.Id == comicId);
+        i = selectedComic.OnPage - 1000;
+    }
+
+    void SelectSeries(string comicSeries)
+    {
+        selectedComicSeries = comicSeries;
+
+        selectedSeries = new List<Comic>();
+        @foreach (var comic in CService.GetComics())
+        {
+            if (comic.Series == selectedComicSeries)
+                selectedSeries.Add(comic);
+        }
+            selectedComicDescription = selectedSeries[0].Description;
+        }
+
+        void PageDown(MouseEventArgs e)
+        {
+            if (i != 0)
+                i = i - 1;
+            CService.HoldPage(selectedComicId, 1000 + i);
+        }
+
+        void PageUp(MouseEventArgs e)
+        {
+            int a = selectedComic.Pages.GetLength(0);
+            if (i != a - 1)
+                i = i + 1; //i'yi comic page sayfa sayısına göre limitle
+            CService.HoldPage(selectedComicId, 1000 + i);
+        }
+
+        void NextComic(MouseEventArgs e)
+        {
+            if (CService.GetComics().First(x => x.Series_Id == selectedComic.Series_Id + 1) != null)
+            {
+                selectedComic = CService.GetComics().First(x => x.Series_Id == selectedComic.Series_Id + 1 && x.Series == selectedComic.Series);
+                i = selectedComic.OnPage - 1000;
+                selectedComicId = selectedComic.Id;
+            }
+        }
+
+        void PreviousComic(MouseEventArgs e)
+        {
+            if (CService.GetComics().First(x => x.Series_Id == selectedComic.Series_Id + 1) != null)
+            {
+                selectedComic = CService.GetComics().First(x => x.Series_Id == selectedComic.Series_Id - 1 && x.Series == selectedComic.Series);
+                i = selectedComic.OnPage - 1000;
+                selectedComicId = selectedComic.Id;
+            }
+        }
+    }

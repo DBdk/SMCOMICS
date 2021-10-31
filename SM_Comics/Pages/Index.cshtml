@@ -1,0 +1,15 @@
+﻿@page
+@using SM_Comics.Components
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Spider-Man Comics</h1>
+</div>
+
+@(await Html.RenderComponentAsync<PageReveal>(RenderMode.ServerPrerendered))
+
+<script src="_framework/blazor.server.js"></script>
+<script type="text/javascript">Sys.WebForms.PageRequestManager.getInstance().add_endRequest(pageLoaded); function pageLoaded(sender, args) { window.scrollTo(0, 0); }</script>
