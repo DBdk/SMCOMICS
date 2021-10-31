@@ -3,4 +3,4 @@
 
 // Write your JavaScript code.
 
-$('#comicModal').modal('handleUpdate')
+//asd
